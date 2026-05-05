@@ -1,0 +1,27 @@
+# Model files (large, can be regenerated)
+diamond_model.pkl
+
+# Streamlit
+.streamlit/
+logs.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
