@@ -5,10 +5,9 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import ExtraTreesRegressor
-from pycaret.datasets import get_data
 
-# Cargar datos
-data = get_data('diamond')
+# Cargar datos desde CSV
+data = pd.read_csv('diamond_data.csv')
 
 # Features y target
 X = data.drop('Price', axis=1)

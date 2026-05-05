@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import joblib
-from pycaret.datasets import get_data
 
 # Configuración de la página
 st.set_page_config(
@@ -25,7 +24,7 @@ def load_model():
     # Si el modelo no existe, entrenarlo
     if not os.path.exists(model_path):
         with st.spinner('Entrenando modelo por primera vez... Esto puede tardar un minuto.'):
-            data = get_data('diamond')
+            data = pd.read_csv('diamond_data.csv')
             X = data.drop('Price', axis=1)
             y = data['Price']
             
@@ -62,7 +61,7 @@ with tab1:
     st.header("📊 Exploración del Dataset")
     st.write("Acá vas a conocer los datos que el modelo usó para aprender a predecir precios.")
     
-    data = get_data('diamond')
+    data = pd.read_csv('diamond_data.csv')
     
     # Explicación del dataset
     st.info("""
@@ -132,7 +131,7 @@ with tab2:
     from sklearn.model_selection import train_test_split
     from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
     
-    data = get_data('diamond')
+    data = pd.read_csv('diamond_data.csv')
     X = data.drop('Price', axis=1)
     y = data['Price']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
