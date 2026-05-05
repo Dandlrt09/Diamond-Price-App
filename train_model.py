@@ -1,5 +1,5 @@
 import pandas as pd
-import joblib
+import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
@@ -40,8 +40,9 @@ pipe = Pipeline(steps=[
 
 # Split y entrenar
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-pipe.fit(X_train, y_train)
+            pipe.fit(X_train, y_train)
 
-# Guardar modelo
-joblib.dump(pipe, 'diamond_model.pkl')
+# Guardar modelo con pickle (no requiere instalación extra)
+with open('diamond_model.pkl', 'wb') as f:
+    pickle.dump(pipe, f)
 print("Modelo guardado como diamond_model.pkl")

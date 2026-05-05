@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import joblib
+import pickle
 import numpy as np
 
 # Configuración de la página
@@ -44,9 +44,11 @@ def load_model():
             
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
             pipe.fit(X_train, y_train)
-            joblib.dump(pipe, model_path)
+            with open(model_path, 'wb') as f:
+                pickle.dump(pipe, f)
     
-    return joblib.load(model_path)
+    with open(model_path, 'rb') as f:
+        return pickle.load(f)
 
 model = load_model()
 
