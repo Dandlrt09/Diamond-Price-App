@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import numpy as np
 
 # Configuración de la página
 st.set_page_config(
@@ -151,7 +152,8 @@ with tab2:
     
     r2 = r2_score(y_test, y_pred)
     mae = mean_absolute_error(y_test, y_pred)
-    rmse = mean_squared_error(y_test, y_pred, squared=False)
+    mse = mean_squared_error(y_test, y_pred)
+    rmse = np.sqrt(mse)
     
     with col1:
         st.metric("R² Score", f"{r2:.4f}")
