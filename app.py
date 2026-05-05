@@ -10,10 +10,43 @@ st.set_page_config(
     layout="wide"
 )
 
-# Cargar modelo
+# Cargar modelo (si no existe, lo entrena automáticamente)
 @st.cache_resource
 def load_model():
-    return joblib.load('diamond_model.pkl')
+    import os
+    from sklearn.ensemble import ExtraTreesRegressor
+    from sklearn.compose import ColumnTransformer
+    from sklearn.preprocessing import OneHotEncoder
+    from sklearn.pipeline import Pipeline
+    from sklearn.model_selection import train_test_split
+    
+    model_path = 'diamond_model.pkl'
+    
+    # Si el modelo no existe, entrenarlo
+    if not os.path.exists(model_path):
+        with st.spinner('Entrenando modelo por primera vez... Esto puede tardar un minuto.'):
+            data = get_data('diamond')
+            X = data.drop('Price', axis=1)
+            y = data['Price']
+            
+            numeric_features = X.select_dtypes(include=['int64', 'float64']).columns
+            categorical_features = X.select_dtypes(include=['object']).columns
+            
+            preprocessor = ColumnTransformer(
+                transformers=[
+                    ('num', 'passthrough', numeric_features),
+                    ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
+                ]
+            )
+            
+            modelo = ExtraTreesRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+            pipe = Pipeline(steps=[('preprocessor', preprocessor), ('regressor', modelo)])
+            
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            pipe.fit(X_train, y_train)
+            joblib.dump(pipe, model_path)
+    
+    return joblib.load(model_path)
 
 model = load_model()
 
