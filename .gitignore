@@ -1,6 +1,9 @@
 # Model files - kept in repo for Streamlit Cloud deployment
 # diamond_model.pkl
 
+# Diamond dataset (needed for deployment)
+# diamond_data.csv
+
 # Streamlit
 .streamlit/
 logs.log

@@ -1,6 +1,12 @@
 import streamlit as st
 import pandas as pd
-import pickle
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 import numpy as np
 
 # Configuración de la página
@@ -10,13 +16,41 @@ st.set_page_config(
     layout="wide"
 )
 
-# Cargar modelo
-@st.cache_resource
-def load_model():
-    with open('diamond_model.pkl', 'rb') as f:
-        return pickle.load(f)
+# ── Cargar datos ──
+@st.cache_data
+def cargar_datos():
+    # Cargar dataset desde CSV local (sin dependencias externas)
+    return pd.read_csv('diamond_data.csv')
 
-model = load_model()
+# ── Entrenar modelo ──
+@st.cache_resource
+def entrenar_modelo():
+    data = cargar_datos()
+    
+    X = data.drop('Price', axis=1)
+    y = data['Price']
+    
+    numeric_features = X.select_dtypes(include=['int64', 'float64']).columns
+    categorical_features = X.select_dtypes(include=['object']).columns
+    
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', 'passthrough', numeric_features),
+            ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
+        ]
+    )
+    
+    modelo = ExtraTreesRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+    pipe = Pipeline(steps=[('preprocessor', preprocessor), ('regressor', modelo)])
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    pipe.fit(X_train, y_train)
+    
+    return pipe, X_test, y_test
+
+# Cargar y entrenar
+data = cargar_datos()
+model, X_test, y_test = entrenar_modelo()
 
 # Título principal
 st.title("💎 Predicción de Precios de Diamantes")
@@ -29,16 +63,6 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Datos", "📈 Evaluación", "🎮 Simula
 with tab1:
     st.header("📊 Exploración del Dataset")
     st.write("Acá vas a conocer los datos que el modelo usó para aprender a predecir precios.")
-    
-    data = pd.read_csv('diamond_data.csv')
-    
-    # Explicación del dataset
-    st.info("""
-    **¿Qué es este dataset?**
-    Contiene información real de **6,000 diamantes**. Cada fila representa un diamante 
-    con sus características físicas y su precio real de venta. El modelo aprendió 
-    patrones entre estas características y el precio.
-    """)
     
     col1, col2 = st.columns(2)
     
@@ -73,9 +97,9 @@ with tab1:
             'Calidad del corte geométrico (Ideal es el mejor)',
             'Color desde D (incoloro) hasta J (liger amarillo)',
             'Pureza: presencia de inclusiones (IF = perfecto, I1 = visible)',
-            'Acabado superficial de la piedra',
-            'Precisión de las faccetas alineadas',
-            'Laboratorio que certifica las características',
+            'Calidad del pulido (EX, VG, G, ID, Fair)',
+            'Simetría (EX, VG, G, ID, Fair)',
+            'Laboratorio certificador (GIA, AGSL, IGI, EGL)',
             'Precio final de venta en dólares USD'
         ],
         'Importancia': [
@@ -97,17 +121,8 @@ with tab2:
     st.header("📈 ¿Qué tan bueno es el modelo?")
     st.write("Acá evaluamos si el modelo realmente sabe predecir precios o solo está adivinando.")
     
-    from sklearn.model_selection import train_test_split
-    from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
-    
-    data = pd.read_csv('diamond_data.csv')
-    X = data.drop('Price', axis=1)
-    y = data['Price']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
     y_pred = model.predict(X_test)
     
-    # Explicación de las métricas
     st.subheader("🎯 Métricas de rendimiento")
     st.info("""
     **¿Cómo evaluamos al modelo?**
@@ -133,9 +148,8 @@ with tab2:
     
     with col3:
         st.metric("Error Cuadrático (RMSE)", f"${rmse:.2f}")
-        st.caption("**¿Qué es?** Castiga errores grandes. Simil al MAE pero más sensible.")
+        st.caption("**¿Qué es?** Castiga errores grandes. Similar al MAE pero más sensible.")
     
-    # Analogía para entender
     st.success("""
     💡 **Para ponerlo en contexto:**
     - Si comprás un diamante de $5,000, el modelo te diría un precio entre $4,350 y $5,650 (error típico)
@@ -145,10 +159,7 @@ with tab2:
     
     st.markdown("---")
     
-    # Gráficos
     st.subheader("📊 Visualización del rendimiento")
-    
-    import matplotlib.pyplot as plt
     
     col1, col2 = st.columns(2)
     
@@ -170,7 +181,6 @@ with tab2:
         
         st.caption("""
         ✅ **Interpretación:** La mayoría de los errores están cerca de $0 (línea roja).
-        Si el gráfico fuera plano y ancho, el modelo sería malo.
         """)
     
     with col2:
@@ -195,7 +205,7 @@ with tab2:
 
 # Tab 3: Simulador
 with tab3:
-    st.header("Simulador de Precios")
+    st.header("🎮 Simulador de Precios")
     st.write("Ajustá los parámetros del diamante para predecir su precio:")
     
     col1, col2 = st.columns(2)
@@ -227,12 +237,11 @@ with tab3:
         prediction = model.predict(input_data)[0]
         
         st.success(f"**Precio estimado: ${prediction:,.2f} USD**")
-        
         st.info("💡 *Este es un valor referencial basado en el modelo de Machine Learning entrenado.*")
 
 # Tab 4: Sobre el proyecto
 with tab4:
-    st.header("Sobre este proyecto")
+    st.header("ℹ️ Sobre este proyecto")
     
     st.markdown("""
     ### 🎯 Objetivo
@@ -261,7 +270,8 @@ with tab4:
     - **Algoritmo**: Extra Trees Regressor con 100 estimadores
     
     ### 📁 Repositorio
-    Podés ver el notebook original y el código fuente en el repositorio de [DataScience_Proyects](https://github.com/Dandlrt09/DataScience_Proyects).
+    Podés ver el notebook original y el código fuente en el repositorio de 
+    [DataScience_Proyects - Proyecto 3](https://github.com/Dandlrt09/DataScience_Proyects/tree/main/Proyecto%203)
     """)
 
 # Footer
